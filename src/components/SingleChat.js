@@ -18,7 +18,8 @@ import io from "socket.io-client";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 
-const ENDPOINT = "http://localhost:1234";
+const ENDPOINT = `${process.env.REACT_APP_BACKEND_URI}`;
+// const ENDPOINT = "http://localhost:1234";
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -77,7 +78,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         };
         setNewMessage("");
         const { data } = await axios.post(
-          "http://localhost:1234/api/message",
+          `${process.env.REACT_APP_BACKEND_URI}`,
+          // "http://localhost:1234/api/message",
           {
             content: newMessage,
             chatId: selectedChat._id,
@@ -111,7 +113,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       };
       setLoading(true);
       const { data } = await axios.get(
-        `http://localhost:1234/api/message/${selectedChat._id}`,
+        `${process.env.REACT_APP_BACKEND_URI}/api/message/${selectedChat._id}`,
+        // `http://localhost:1234/api/message/${selectedChat._id}`,
         config
       );
       setMessages(data);
