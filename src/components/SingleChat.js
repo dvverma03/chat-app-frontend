@@ -18,7 +18,7 @@ import { io } from "socket.io-client";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 
-const ENDPOINT = `${process.env.REACT_APP_BACKEND_URI}` || "http://localhost:1234";
+const ENDPOINT = "http://localhost:1234" || `${process.env.REACT_APP_BACKEND_URI}`;
 let socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
