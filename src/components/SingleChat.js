@@ -18,8 +18,8 @@ import io from "socket.io-client";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 
-const ENDPOINT = `${process.env.REACT_APP_BACKEND_URI}`;
-// const ENDPOINT = "http://localhost:1234";
+// const ENDPOINT = `${process.env.REACT_APP_BACKEND_URI}`;
+const ENDPOINT = "http://localhost:1234";
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -47,9 +47,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socket = io(ENDPOINT);
     socket.emit("setup", user?.data);
     socket.on("connected", () => setSocketConnected(true));
-    socket.on('typing', () => setIsTyping(true));
-    socket.on('stop typing', () => setIsTyping(false));
-  }, []);
+    socket.on("typing", () => setIsTyping(true));
+    socket.on("stop typing", () => setIsTyping(false));
+    return () => {
+      socket.disconnect();
+    };
+  }, [ENDPOINT, user]);
 
   useEffect(() => {
     fetchMessages();
@@ -78,8 +81,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         };
         setNewMessage("");
         const { data } = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URI}`,
-          // "http://localhost:1234/api/message",
+          // `http://localhost:/api/message`,
+          `${process.env.REACT_APP_BACKEND_URI}/api/message`,
           {
             content: newMessage,
             chatId: selectedChat._id,
@@ -103,7 +106,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
-
+  
     try {
       const config = {
         headers: {
@@ -113,8 +116,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       };
       setLoading(true);
       const { data } = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URI}/api/message/${selectedChat._id}`,
         // `http://localhost:1234/api/message/${selectedChat._id}`,
+        `${process.env.REACT_APP_BACKEND_URI}/api/message/${selectedChat._id}`,
         config
       );
       setMessages(data);
