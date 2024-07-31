@@ -14,13 +14,12 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./styles.css";
 import ScrollableChat from "./ScrollableChat";
-import io from "socket.io-client";
+import { io } from "socket.io-client";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 
-// const ENDPOINT = `${process.env.REACT_APP_BACKEND_URI}`;
-const ENDPOINT = "http://localhost:1234";
-var socket, selectedChatCompare;
+const ENDPOINT = process.env.REACT_APP_BACKEND_URI || "http://localhost:1234";
+let socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const { selectedChat, setSelectedChat, user } = ChatState();
@@ -35,7 +34,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   useEffect(() => {
     if (selectedChat && user) {
-      if (selectedChat?.users[0]?._id == user?.data?._id) {
+      if (selectedChat?.users[0]?._id === user?.data?._id) {
         setSenderDetails(selectedChat?.users[1]);
       } else {
         setSenderDetails(selectedChat?.users[0]);
@@ -44,11 +43,18 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   }, [selectedChat, setSelectedChat, user]);
 
   useEffect(() => {
-    socket = io(ENDPOINT);
+    socket = io(ENDPOINT, {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
     socket.emit("setup", user?.data);
     socket.on("connected", () => setSocketConnected(true));
-    socket.on("typing", () => setIsTyping(true));
-    socket.on("stop typing", () => setIsTyping(false));
+    socket.on('typing', () => setIsTyping(true));
+    socket.on('stop typing', () => setIsTyping(false));
+    socket.on("disconnect", () => {
+      setSocketConnected(false);
+    });
+
     return () => {
       socket.disconnect();
     };
@@ -64,7 +70,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       if (!selectedChatCompare || selectedChatCompare._id !== newMessageReceived.chat._id) {
         // do nothing or handle notification
       } else {
-        setMessages([...messages, newMessageReceived]);
+        setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
       }
     });
   });
@@ -81,7 +87,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         };
         setNewMessage("");
         const { data } = await axios.post(
-          // `http://localhost:/api/message`,
           `${process.env.REACT_APP_BACKEND_URI}/api/message`,
           {
             content: newMessage,
@@ -90,7 +95,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           config
         );
         socket.emit("new message", data);
-        setMessages([...messages, data]);
+        setMessages((prevMessages) => [...prevMessages, data]);
       } catch (error) {
         toast({
           title: "Error Occurred!",
@@ -106,7 +111,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
-  
+
     try {
       const config = {
         headers: {
@@ -116,7 +121,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       };
       setLoading(true);
       const { data } = await axios.get(
-        // `http://localhost:1234/api/message/${selectedChat._id}`,
         `${process.env.REACT_APP_BACKEND_URI}/api/message/${selectedChat._id}`,
         config
       );
@@ -217,17 +221,20 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 <ScrollableChat messages={messages} />
               </div>
             )}
-            <FormControl
-              onKeyDown={sendMessage}
-              id="first-name"
-              isRequired
-              mt={3}
-            >
+            <FormControl onKeyDown={sendMessage} id="first-name" isRequired mt={3}>
               {isTyping ? (
                 <div>
                   <Lottie
-                    options={{ animationData }}
-                    width={50}
+                    options={{
+                      loop: true,
+                      autoplay: true,
+                      animationData: animationData,
+                      rendererSettings: {
+                        preserveAspectRatio: "xMidYMid slice"
+                      }
+                    }}
+                    height={50}
+                    width={70}
                     style={{ marginBottom: 15, marginLeft: 0 }}
                   />
                 </div>
@@ -238,20 +245,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 placeholder="Enter a message.."
                 value={newMessage}
                 onChange={typingHandler}
-                position="fixed"
-                bottom={3}
-                width={{ base: "auto", md: "63.5%" }}
-                left={{ base: "22px", md: "34%" }}
-                right={{ base: "22px", md: "3%" }}
-                p={2}
-                borderRadius="md"
               />
             </FormControl>
           </Box>
         </>
       ) : (
         <Box d="flex" alignItems="center" justifyContent="center" h="100%">
-          <Text fontSize={{ base: "2xl", md: "3xl" }} pb={3} fontFamily="Work sans">
+          <Text fontSize="3xl" pb={3} fontFamily="Work sans">
             Click on a user to start chatting
           </Text>
         </Box>
